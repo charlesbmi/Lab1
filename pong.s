@@ -1,9 +1,8 @@
 # EE108B Lab 1
-
-# This is the starter code for EE 108B Lab 1
+# Nipun Agarwala and Charles Guan
 # Winter 2014, Stanford University
 
-# Written by Chris Copeland (chrisnc@stanford.edu)
+# Starter code written by Chris Copeland (chrisnc@stanford.edu)
 # based on the previous version of the assignment
 
 # You must implement a self-playing Pong game using the SPIM simulator and the
@@ -110,6 +109,21 @@ main:
     li    $a0, 0x6        # c = 110 = yellow
     jal   write_byte
 
+# function: draw_paddle
+# draws a 3-wide paddle centered at (TODO: Comments)
+draw_paddle:
+    li    $a0, 39         # x = 39
+    li    $a1, 14         # y = center value 
+    li    $a2, 111        # c = 111 = white 
+    jal   write_square
+    li    $a0, 39         # x = 39
+    li    $a1, 13         # y = center value - 1 
+    li    $a2, 111        # c = 111 = white 
+    jal   write_square
+    li    $a0, 39         # x = 39
+    li    $a1, 15         # y = center value + 1
+    li    $a2, 111        # c = 111 = white 
+    jal   write_square
 
 game_loop:
 
@@ -137,13 +151,30 @@ end_the_game:
     li    $v0, 10 # the exit syscall
     syscall
     
-    
- 
-
 # write useful functions here
 
 # functions can call other functions, but make sure to use consistent
 # calling conventions and to restore return addresses properly
+
+# function: write_square
+# write the bytes in $a0, $a1, $a2 to the transmitter data register
+# in sequence, corresponding in a drawn square at x=$a0,y=$a1,c=$a2
+write_square:
+    addiu $sp, $sp, -32      # push stack frame
+    sw    $ra, 28($sp)       # save $ra
+    sw    $fp, 24($sp)       # save fp
+    addiu $fp, $sp, 28       # setup fp
+    sw    $a0, 20($sp)       # save a0 
+    jal   write_byte
+    add   $a0, $a1, $zero    # store a1 to a0 to write byte
+    jal   write_byte
+    add   $a0, $a2, $zero    # store a2 to a0 to write byte
+    jal   write_byte
+    lw    $a0, 0($sp)        # restore a0
+    lw    $ra, 28($sp)       # load $ra
+    lw    $fp, 24($sp)       # load $fp
+    addiu $sp, $sp, 32
+    jr    $ra                # pop stack frame
 
 # function: write_byte
 # write the byte in $a0 to the transmitter data register after polling
