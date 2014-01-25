@@ -94,6 +94,7 @@ setup:
     srl   $t1, $t0, 1
     add   $a1, $s1, $t1
     jal   draw_paddle     # at x = y-ball coord + (paddle width / 2) to center paddle on ball
+#    jal   clear_paddle
 
 game_loop:
     jal   set_position
@@ -146,9 +147,9 @@ end_the_game:
 # calling conventions and to restore return addresses properly
 
 # function: draw_paddle
-# draws a paddle centered at (TODO: Comments). The width of the
-# paddle is determined by 
-# Uses that 
+# draws a paddle centered at the ball's current y-coordinate.
+# The width of the paddle is determined by a global var
+# Does not error check for bounds
 # $a0 contains x coordinate of paddle
 # $a1 contains initial y coordinate
 draw_paddle:
@@ -156,20 +157,40 @@ draw_paddle:
     sw    $ra, 28($sp)       # save $ra
     sw    $s0, 24($sp)       # make space for paddle height
     lw    $s0, 56($sp)       # i = paddle height (32 for this frame, + 24 from original)
-    li    $a0, 39            # x = 39
-    li    $a2, 111           # c = 111 = white 
+    add   $a0, $zero, $zero  # x = 0 (left edge paddle)
+    addi  $a2, $zero, 111    # c = 111 = white 
     j draw_paddle_for_cond
 draw_paddle_loop:
     jal   write_square
     addi  $s0, $s0, -1       # i--
     addi  $a1, $a1, -1       # y-coordinate of paddle
 draw_paddle_for_cond:
-    slt   $t0, $zero, $s0        # 1 if i > 0
+    slt   $t0, $zero, $s0    # 1 if i > 0
     bne   $t0, $zero, draw_paddle_loop
 draw_paddle_exit:
     lw    $ra, 28($sp)       # load $ra
     lw    $s0, 24($sp)       # make space for paddle height
     addiu $sp, $sp, 32       # pop stack frame
+    jr    $ra
+
+# function: clear_column
+# blacks out a column (usually to erase a paddle)
+clear_paddle:
+    addiu $sp, $sp, -32
+    sw    $ra, 28($sp)
+    add   $a0, $zero, $zero
+    addi  $a1, $zero, 29
+    add   $a2, $zero, $zero
+    j clear_paddle_while_cond
+clear_paddle_loop:
+    jal write_square
+    addi  $a1, $a1, -1
+clear_paddle_while_cond:
+    slt   $t0, $a1, $zero
+    beq   $t0, $zero, clear_paddle_loop
+clear_paddle_exit:
+    lw    $ra, 28($sp)
+    addiu $sp, $sp, 32
     jr    $ra
 
 # function: write_square
