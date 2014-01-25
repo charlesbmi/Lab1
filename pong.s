@@ -159,17 +159,14 @@ draw_paddle_exit:
 write_square:
     addiu $sp, $sp, -32      # push stack frame
     sw    $ra, 28($sp)       # save $ra
-    sw    $fp, 24($sp)       # save fp
-    addiu $fp, $sp, 28       # setup fp
     sw    $a0, 20($sp)       # save a0 
     jal   write_byte
     add   $a0, $a1, $zero    # store a1 to a0 to write byte
     jal   write_byte
     add   $a0, $a2, $zero    # store a2 to a0 to write byte
     jal   write_byte
-    lw    $a0, 20($sp)        # restore a0
+    lw    $a0, 20($sp)       # restore a0
     lw    $ra, 28($sp)       # load $ra
-    lw    $fp, 24($sp)       # load $fp
     addiu $sp, $sp, 32
     jr    $ra                # pop stack frame
 
