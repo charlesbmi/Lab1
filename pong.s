@@ -1,19 +1,7 @@
 # EE108B Lab 1
-
-# This is the starter code for EE 108B Lab 1
-# Winter 2014, Stanford University
-
-# Written by Chris Copeland (chrisnc@stanford.edu)
-# based on the previous version of the assignment
-
-# You must implement a self-playing Pong game using the SPIM simulator and the
-# provided Python script that creates a display that will interact
-# with your MIPS program via memory-mapped I/O.
-
-# The principal requirement is that your code use no more than 256 assembly
-# instructions. This is enforced in the Makefile, where one argument to spim
-# is "-st 1024", meaning: limit the text segment to 1024 bytes = 256 words.
-# SPIM will give you many errors if you exceed this limit.
+# Nipun Agarwala and Charles Guan
+# This program implements a self-playing Pong game using the SPIM simulator
+# and the provided Python script (for displaying MMIO)
 
 # The display can draw squares of different colors on a 40x30 grid.
 # (x,y): (0,0) is the top left, (39,29) is the bottom right
@@ -39,34 +27,11 @@
 # This implementation is provided for you below in the "write_byte" function.
 # Make sure you understand the implementation.
 
-
-# You may implement the following extensions for up to 10 points of extra
-# credit (out of 100):
-
-# 1. Paddles on every edge of the grid, all following the ball.
-
-# 2. Implement "Breakout". You may interpret this liberally, but at a minimum
-# it must involve some form of destructible blocks whose states
-# (position, destroyed or not, etc.) are stored in dynamically-allocated
-# memory. Read SPIM documentation on syscalls to learn how to allocate memory.
-
-# 3. Allow the user to control the paddle(s) by typing w/a/s/d while
-# the Terminal window is selected. Refer to SPIM documentation on how
-# to use the receiver control and data registers. (SPIM has facilities
-# to read from stdin in a similar fashion to writing to stdout.)
-
-# It may be difficult to implement all three extensions within the
-# 256-instruction limit, so choose wisely.
-
-# Come to office hours for a demonstration of these extensions, but be
-# creative, particularly with Breakout, if you attempt them yourself.
-
 .text
 .globl main
 
 main:
-# we put some useful constants on the "stack"
-# you may add more or change the existing ones if you wish
+# place constants on stack
     li    $t0, 39         # maximum x coordinate
     sw    $t0, 0($sp)
     li    $t0, 29         # maximum y coordinate
@@ -82,7 +47,7 @@ main:
     li    $t0, 6          # paddle height
     sw    $t0, 24($sp)
     li    $s0, 12         # Ball X coordinate
-    li    $s1, 30         # Ball Y coordinate
+    li    $s1, 29         # Ball Y coordinate
     li    $s2, 0          # Counter
     li    $s3, 1          # X coordinate increment
     li    $s4, 1          # Y coordinate increment
