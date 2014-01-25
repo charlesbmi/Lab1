@@ -1,19 +1,7 @@
 # EE108B Lab 1
-
-# This is the starter code for EE 108B Lab 1
-# Winter 2014, Stanford University
-
-# Written by Chris Copeland (chrisnc@stanford.edu)
-# based on the previous version of the assignment
-
-# You must implement a self-playing Pong game using the SPIM simulator and the
-# provided Python script that creates a display that will interact
-# with your MIPS program via memory-mapped I/O.
-
-# The principal requirement is that your code use no more than 256 assembly
-# instructions. This is enforced in the Makefile, where one argument to spim
-# is "-st 1024", meaning: limit the text segment to 1024 bytes = 256 words.
-# SPIM will give you many errors if you exceed this limit.
+# Nipun Agarwala and Charles Guan
+# This program implements a self-playing Pong game using the SPIM simulator
+# and the provided Python script (for displaying MMIO)
 
 # The display can draw squares of different colors on a 40x30 grid.
 # (x,y): (0,0) is the top left, (39,29) is the bottom right
@@ -21,10 +9,8 @@
 
 # 1. Store a byte into the transmitter data register (address 0xffff000c)
 # representing the x-coordinate of the square to draw. (number from 0 to 39)
-
 # 2. Store a byte into the transmitter data register
 # representing the y-coordinate of the square to draw. (number from 0 to 29)
-
 # 3. Store a byte into the transmitter data register
 # representing the color to make the square. (number from 0 to 7)
 # The color format is 3-bit RGB, e.g., 0b100 is red, 0b010 is green,
@@ -39,34 +25,11 @@
 # This implementation is provided for you below in the "write_byte" function.
 # Make sure you understand the implementation.
 
-
-# You may implement the following extensions for up to 10 points of extra
-# credit (out of 100):
-
-# 1. Paddles on every edge of the grid, all following the ball.
-
-# 2. Implement "Breakout". You may interpret this liberally, but at a minimum
-# it must involve some form of destructible blocks whose states
-# (position, destroyed or not, etc.) are stored in dynamically-allocated
-# memory. Read SPIM documentation on syscalls to learn how to allocate memory.
-
-# 3. Allow the user to control the paddle(s) by typing w/a/s/d while
-# the Terminal window is selected. Refer to SPIM documentation on how
-# to use the receiver control and data registers. (SPIM has facilities
-# to read from stdin in a similar fashion to writing to stdout.)
-
-# It may be difficult to implement all three extensions within the
-# 256-instruction limit, so choose wisely.
-
-# Come to office hours for a demonstration of these extensions, but be
-# creative, particularly with Breakout, if you attempt them yourself.
-
 .text
 .globl main
 
 main:
-# we put some useful constants on the "stack"
-# you may add more or change the existing ones if you wish
+# place constants on stack
     li    $t0, 39         # maximum x coordinate
     sw    $t0, 0($sp)
     li    $t0, 29         # maximum y coordinate
@@ -82,7 +45,7 @@ main:
     li    $t0, 6          # paddle height
     sw    $t0, 24($sp)
     li    $s0, 12         # Ball X coordinate
-    li    $s1, 20         # Ball Y coordinate
+    li    $s1, 29         # Ball Y coordinate
     li    $s2, 0          # Counter
     li    $s3, 1          # X coordinate increment
     li    $s4, 1          # Y coordinate increment
@@ -92,7 +55,11 @@ main:
     li    $t2, 1
 
 setup:
-    jal   draw_paddle
+    lw    $t0, 24($sp)
+    srl   $t1, $t0, 1
+    add   $a1, $s1, $t1
+    jal   draw_paddle     # at x = y-ball coord + (paddle width / 2) to center paddle on ball
+#    jal   clear_paddle
 
 game_loop:
     jal   set_position
@@ -168,9 +135,6 @@ end_the_game:
     jal   write_byte
     li    $v0, 10 # the exit syscall
     syscall
-    
-    
- 
 
 # write useful functions here
 
@@ -178,33 +142,58 @@ end_the_game:
 # calling conventions and to restore return addresses properly
 
 # function: draw_paddle
-# draws a paddle centered at (TODO: Comments). The width of the
-# paddle is determined by 
-# Uses that 
+# draws a paddle centered at the ball's current y-coordinate.
+# The width of the paddle is determined by a global var
+# Does not error check for bounds
 # $a0 contains x coordinate of paddle
 # $a1 contains initial y coordinate
-# $a2 color
-# $a3 paddle height
 draw_paddle:
     addiu $sp, $sp, -32      # push stack frame
     sw    $ra, 28($sp)       # save $ra
     sw    $s0, 24($sp)       # make space for paddle height
-    lw    $s0, 56($sp)    # i = paddle height (32 for this frame, + 24 from original)
-    li    $a0, 39         # x = 39
-    li    $a1, 10         # test value
-    li    $a2, 111        # c = 111 = white 
+    lw    $s0, 56($sp)       # i = paddle height (32 for this frame, + 24 from original)
+    add   $a0, $zero, $zero  # x = 0 (left edge paddle)
+    addi  $a2, $zero, 111    # c = 111 = white 
+paddle_upper_bound:
+    slti  $t0, $a1, 30       # 1 if y-coord not too large
+    bne   $t0, $zero, paddle_lower_bound
+    addi  $a1, $zero, 29 
+paddle_lower_bound:
+    slt   $t0, $a1, $s0      # 1 if y-coord too small
+    beq   $t0, $zero, draw_paddle_for_cond
+    addi  $a1, $s0, -1
     j draw_paddle_for_cond
 draw_paddle_loop:
-    addi  $s0, $s0, -1    # i--
-    addi  $a1, $a1, 1     # y-coordinate of paddle
     jal   write_square
+    addi  $s0, $s0, -1       # i--
+    addi  $a1, $a1, -1       # y-coordinate of paddle
 draw_paddle_for_cond:
-    slt   $t0, $zero, $s0        # 1 if i > 0
+    slt   $t0, $zero, $s0    # 1 if i > 0
     bne   $t0, $zero, draw_paddle_loop
 draw_paddle_exit:
     lw    $ra, 28($sp)       # load $ra
     lw    $s0, 24($sp)       # make space for paddle height
     addiu $sp, $sp, 32       # pop stack frame
+    jr    $ra
+
+# function: clear_column
+# blacks out a column (usually to erase a paddle)
+clear_paddle:
+    addiu $sp, $sp, -32
+    sw    $ra, 28($sp)
+    add   $a0, $zero, $zero
+    addi  $a1, $zero, 29
+    add   $a2, $zero, $zero
+    j clear_paddle_while_cond
+clear_paddle_loop:
+    jal write_square
+    addi  $a1, $a1, -1
+clear_paddle_while_cond:
+    slt   $t0, $a1, $zero
+    beq   $t0, $zero, clear_paddle_loop
+clear_paddle_exit:
+    lw    $ra, 28($sp)
+    addiu $sp, $sp, 32
     jr    $ra
 
 # function: write_square
