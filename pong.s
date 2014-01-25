@@ -82,7 +82,7 @@ main:
     li    $t0, 6          # paddle height
     sw    $t0, 24($sp)
     li    $s0, 12         # Ball X coordinate
-    li    $s1, 10         # Ball Y coordinate
+    li    $s1, 30         # Ball Y coordinate
     li    $s2, 0          # Counter
     li    $s3, 1          # X coordinate increment
     li    $s4, 1          # Y coordinate increment
@@ -159,6 +159,14 @@ draw_paddle:
     lw    $s0, 56($sp)       # i = paddle height (32 for this frame, + 24 from original)
     add   $a0, $zero, $zero  # x = 0 (left edge paddle)
     addi  $a2, $zero, 111    # c = 111 = white 
+paddle_upper_bound:
+    slti  $t0, $a1, 30       # 1 if y-coord not too large
+    bne   $t0, $zero, paddle_lower_bound
+    addi  $a1, $zero, 29 
+paddle_lower_bound:
+    slt   $t0, $a1, $s0      # 1 if y-coord too small
+    beq   $t0, $zero, draw_paddle_for_cond
+    addi  $a1, $s0, -1
     j draw_paddle_for_cond
 draw_paddle_loop:
     jal   write_square
