@@ -9,10 +9,8 @@
 
 # 1. Store a byte into the transmitter data register (address 0xffff000c)
 # representing the x-coordinate of the square to draw. (number from 0 to 39)
-
 # 2. Store a byte into the transmitter data register
 # representing the y-coordinate of the square to draw. (number from 0 to 29)
-
 # 3. Store a byte into the transmitter data register
 # representing the color to make the square. (number from 0 to 7)
 # The color format is 3-bit RGB, e.g., 0b100 is red, 0b010 is green,
