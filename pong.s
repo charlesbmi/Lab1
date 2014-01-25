@@ -86,8 +86,10 @@ main:
     li    $s2, 0          # Counter
     li    $s3, 1          # X coordinate increment
     li    $s4, 1          # Y coordinate increment
-    li    $t1, 0          # Initialize counter
-    li    $t2, 1000       # Final Counter Value
+    li    $s5, 1          # X direction
+    li    $s6, 1          # Y direction
+    li    $t1, 100        # Initialize counter
+    li    $t2, 1
 
 setup:
     jal   draw_paddle
@@ -95,8 +97,8 @@ setup:
 game_loop:
     jal   set_position
     jal   draw_ball
-    addi  $s1, $s1, 1
-    slt   $t2, $s0, $t1
+    addi  $s2, $s2, 1
+    slt   $t2, $s2, $t1
     beq   $t2, $zero, game_loop
     j     draw_ball
 
@@ -110,7 +112,37 @@ draw_ball:
     jr    $ra
 
 set_position:
-    
+    addiu $sp, $sp, -4
+    sw    $ra, 28($sp)
+    jal   change_x_direction
+test_y:
+    jal   change_y_direction
+    bne   $t3, $s0, change_position
+    li    $s6, 1
+change_position:
+    add   $s0, $s0, $s5
+    add   $s1, $s1, $s6
+    lw    $ra, 28($sp)
+    jr    $ra
+
+change_x_direction:
+    lw    $t0, 0($sp)
+    bne   $t0, $s0, test_x_next
+    li    $s5, -1
+test_x_next:
+    bne   $s0, $zero, finish_x
+    j     end_the_game
+finish_x:
+    jr   $ra
+
+change_y_direction:
+    lw    $t0, 4($sp)
+    bne   $t0, $s1, test_y_next
+    li    $s6, -1
+test_y_next:
+    bne   $s0, $zero, finish_y
+    li    $s6, 1
+finish_y:
     jr    $ra
 
 # GAME CODE GOES HERE
