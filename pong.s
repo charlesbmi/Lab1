@@ -82,7 +82,7 @@ main:
     li    $t0, 6          # paddle height
     sw    $t0, 24($sp)
     li    $s0, 12         # Ball X coordinate
-    li    $s1, 20         # Ball Y coordinate
+    li    $s1, 10         # Ball Y coordinate
     li    $s2, 0          # Counter
     li    $s3, 1          # X coordinate increment
     li    $s4, 1          # Y coordinate increment
@@ -90,7 +90,10 @@ main:
     li    $t2, 1000       # Final Counter Value
 
 setup:
-    jal   draw_paddle
+    lw    $t0, 24($sp)
+    srl   $t1, $t0, 1
+    add   $a1, $s1, $t1
+    jal   draw_paddle     # at x = y-ball coord + (paddle width / 2) to center paddle on ball
 
 game_loop:
     jal   set_position
@@ -136,9 +139,6 @@ end_the_game:
     jal   write_byte
     li    $v0, 10 # the exit syscall
     syscall
-    
-    
- 
 
 # write useful functions here
 
@@ -151,21 +151,18 @@ end_the_game:
 # Uses that 
 # $a0 contains x coordinate of paddle
 # $a1 contains initial y coordinate
-# $a2 color
-# $a3 paddle height
 draw_paddle:
     addiu $sp, $sp, -32      # push stack frame
     sw    $ra, 28($sp)       # save $ra
     sw    $s0, 24($sp)       # make space for paddle height
-    lw    $s0, 56($sp)    # i = paddle height (32 for this frame, + 24 from original)
-    li    $a0, 39         # x = 39
-    li    $a1, 10         # test value
-    li    $a2, 111        # c = 111 = white 
+    lw    $s0, 56($sp)       # i = paddle height (32 for this frame, + 24 from original)
+    li    $a0, 39            # x = 39
+    li    $a2, 111           # c = 111 = white 
     j draw_paddle_for_cond
 draw_paddle_loop:
-    addi  $s0, $s0, -1    # i--
-    addi  $a1, $a1, 1     # y-coordinate of paddle
     jal   write_square
+    addi  $s0, $s0, -1       # i--
+    addi  $a1, $a1, -1       # y-coordinate of paddle
 draw_paddle_for_cond:
     slt   $t0, $zero, $s0        # 1 if i > 0
     bne   $t0, $zero, draw_paddle_loop
