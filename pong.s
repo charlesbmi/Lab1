@@ -1,8 +1,9 @@
 # EE108B Lab 1
-# Nipun Agarwala and Charles Guan
+
+# This is the starter code for EE 108B Lab 1
 # Winter 2014, Stanford University
 
-# Starter code written by Chris Copeland (chrisnc@stanford.edu)
+# Written by Chris Copeland (chrisnc@stanford.edu)
 # based on the previous version of the assignment
 
 # You must implement a self-playing Pong game using the SPIM simulator and the
@@ -80,52 +81,65 @@ main:
     sw    $t0, 20($sp)
     li    $t0, 6          # paddle height
     sw    $t0, 24($sp)
+    li    $s0, 12         # Ball X coordinate
+    li    $s1, 20         # Ball Y coordinate
+    li    $s2, 0          # Counter
+    li    $s3, 1          # X coordinate increment
+    li    $s4, 1          # Y coordinate increment
+    li    $t1, 0          # Initialize counter
+    li    $t2, 1000       # Final Counter Value
 
 # this is an example of proper use of the display protocol
 # remove this code once you have implemented basic drawing
 # functionality for the paddle and ball
-    li    $a0, 0          # x = 0
-    jal   write_byte
-    li    $a0, 0          # y = 0
-    jal   write_byte
-    li    $a0, 0x4        # c = 100 = red
-    jal   write_byte
-    li    $a0, 39         # x = 39
-    jal   write_byte
-    li    $a0, 29         # y = 29
-    jal   write_byte
-    li    $a0, 0x1        # c = 001 = blue
-    jal   write_byte
-    li    $a0, 0          # x = 0
-    jal   write_byte
-    li    $a0, 29         # y = 29
-    jal   write_byte
-    li    $a0, 0x2        # c = 010 = green
-    jal   write_byte
-    li    $a0, 39         # x = 39
-    jal   write_byte
-    li    $a0, 0          # y = 0
-    jal   write_byte
-    li    $a0, 0x6        # c = 110 = yellow
-    jal   write_byte
+    # li    $a0, 0          # x = 0
+    # jal   write_byte
+    # li    $a0, 0          # y = 0
+    # jal   write_byte
+    # li    $a0, 0x4        # c = 100 = red
+    # jal   write_byte
+    # li    $a0, 39         # x = 39
+    # jal   write_byte
+    # li    $a0, 29         # y = 29
+    # jal   write_byte
+    # li    $a0, 0x1        # c = 001 = blue
+    # jal   write_byte
+    # li    $a0, 0          # x = 0
+    # jal   write_byte
+    # li    $a0, 29         # y = 29
+    # jal   write_byte
+    # li    $a0, 0x2        # c = 010 = green
+    # jal   write_byte
+    # li    $a0, 39         # x = 39
+    # jal   write_byte
+    # li    $a0, 0          # y = 0
+    # jal   write_byte
+    # li    $a0, 0x6        # c = 110 = yellow
+    # jal   write_byte
 
-# function: draw_paddle
-# draws a 3-wide paddle centered at (TODO: Comments)
-draw_paddle:
-    li    $a0, 39         # x = 39
-    li    $a1, 14         # y = center value 
-    li    $a2, 111        # c = 111 = white 
-    jal   write_square
-    li    $a0, 39         # x = 39
-    li    $a1, 13         # y = center value - 1 
-    li    $a2, 111        # c = 111 = white 
-    jal   write_square
-    li    $a0, 39         # x = 39
-    li    $a1, 15         # y = center value + 1
-    li    $a2, 111        # c = 111 = white 
-    jal   write_square
 
 game_loop:
+    jal   set_position
+    jal   draw_ball
+    addi  $s1, $s1, 1
+    slt   $t2, $s0, $t1
+    beq   $t2, $zero, game_loop
+    j     draw_ball
+
+
+draw_ball:
+    add   $a0, $s0, $zero
+    jal   write_byte
+    add   $a0, $s1, $zero
+    jal   write_byte
+    lw    $a0, 16($sp)
+    jal   write_byte 
+    jr    $ra
+
+set_position:
+    
+    jr    $ra
+
 
 # GAME CODE GOES HERE
 
@@ -141,7 +155,7 @@ game_loop:
 # the implementation is below
 
     # uncomment this to loop through your game code
-    #j     game_loop
+    j     game_loop
 
 # send the exit signal to the display and make an exit syscall in SPIM
 # this stops the Python Tk display and SPIM safely
@@ -151,30 +165,13 @@ end_the_game:
     li    $v0, 10 # the exit syscall
     syscall
     
+    
+ 
+
 # write useful functions here
 
 # functions can call other functions, but make sure to use consistent
 # calling conventions and to restore return addresses properly
-
-# function: write_square
-# write the bytes in $a0, $a1, $a2 to the transmitter data register
-# in sequence, corresponding in a drawn square at x=$a0,y=$a1,c=$a2
-write_square:
-    addiu $sp, $sp, -32      # push stack frame
-    sw    $ra, 28($sp)       # save $ra
-    sw    $fp, 24($sp)       # save fp
-    addiu $fp, $sp, 28       # setup fp
-    sw    $a0, 20($sp)       # save a0 
-    jal   write_byte
-    add   $a0, $a1, $zero    # store a1 to a0 to write byte
-    jal   write_byte
-    add   $a0, $a2, $zero    # store a2 to a0 to write byte
-    jal   write_byte
-    lw    $a0, 0($sp)        # restore a0
-    lw    $ra, 28($sp)       # load $ra
-    lw    $fp, 24($sp)       # load $fp
-    addiu $sp, $sp, 32
-    jr    $ra                # pop stack frame
 
 # function: write_byte
 # write the byte in $a0 to the transmitter data register after polling
