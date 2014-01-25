@@ -84,46 +84,7 @@ main:
 # this is an example of proper use of the display protocol
 # remove this code once you have implemented basic drawing
 # functionality for the paddle and ball
-    li    $a0, 0          # x = 0
-    jal   write_byte
-    li    $a0, 0          # y = 0
-    jal   write_byte
-    li    $a0, 0x4        # c = 100 = red
-    jal   write_byte
-    li    $a0, 39         # x = 39
-    jal   write_byte
-    li    $a0, 29         # y = 29
-    jal   write_byte
-    li    $a0, 0x1        # c = 001 = blue
-    jal   write_byte
-    li    $a0, 0          # x = 0
-    jal   write_byte
-    li    $a0, 29         # y = 29
-    jal   write_byte
-    li    $a0, 0x2        # c = 010 = green
-    jal   write_byte
-    li    $a0, 39         # x = 39
-    jal   write_byte
-    li    $a0, 0          # y = 0
-    jal   write_byte
-    li    $a0, 0x6        # c = 110 = yellow
-    jal   write_byte
-
-# function: draw_paddle
-# draws a 3-wide paddle centered at (TODO: Comments)
-draw_paddle:
-    li    $a0, 39         # x = 39
-    li    $a1, 14         # y = center value 
-    li    $a2, 111        # c = 111 = white 
-    jal   write_square
-    li    $a0, 39         # x = 39
-    li    $a1, 13         # y = center value - 1 
-    li    $a2, 111        # c = 111 = white 
-    jal   write_square
-    li    $a0, 39         # x = 39
-    li    $a1, 15         # y = center value + 1
-    li    $a2, 111        # c = 111 = white 
-    jal   write_square
+    jal   draw_paddle
 
 game_loop:
 
@@ -156,9 +117,45 @@ end_the_game:
 # functions can call other functions, but make sure to use consistent
 # calling conventions and to restore return addresses properly
 
+# function: draw_paddle
+# draws a paddle centered at (TODO: Comments). The width of the
+# paddle is determined by 
+# Uses that 
+# $a0 contains x coordinate of paddle
+# $a1 contains initial y coordinate
+# $a2 color
+# $a3 paddle height
+draw_paddle:
+    addiu $sp, $sp, -32      # push stack frame
+    sw    $ra, 28($sp)       # save $ra
+    sw    $s0, 24($sp)       # make space for paddle height
+    sw    $s1, 20($sp)       # make space for for-loop counter
+
+    lw    $s0, 56($sp)    # i = paddle height (32 for this frame, + 24 from original)
+
+    li    $a0, 39         # x = 39
+    li    $a1, 14         # test value
+    li    $a2, 111        # c = 111 = white 
+# for (i = 0; i < paddle height; i++)
+    j draw_paddle_for_cond
+draw_paddle_loop:
+    addi  $s0, $s0, -1    # i--
+    addi  $a1, $a1, 1     # y-coordinate of paddle
+    jal   write_square
+draw_paddle_for_cond:
+    slt   $t0, $zero, $s0        # 1 if i > 0
+    bne   $t0, $zero, draw_paddle_loop
+draw_paddle_exit:
+    lw    $ra, 28($sp)       # load $ra
+    lw    $s0, 24($sp)       # make space for paddle height
+    lw    $s1, 20($sp)       # make space for for-loop counter
+    addiu $sp, $sp, 32       # pop stack frame
+    jr    $ra
+
 # function: write_square
 # write the bytes in $a0, $a1, $a2 to the transmitter data register
 # in sequence, corresponding in a drawn square at x=$a0,y=$a1,c=$a2
+
 write_square:
     addiu $sp, $sp, -32      # push stack frame
     sw    $ra, 28($sp)       # save $ra
@@ -170,7 +167,7 @@ write_square:
     jal   write_byte
     add   $a0, $a2, $zero    # store a2 to a0 to write byte
     jal   write_byte
-    lw    $a0, 0($sp)        # restore a0
+    lw    $a0, 20($sp)        # restore a0
     lw    $ra, 28($sp)       # load $ra
     lw    $fp, 24($sp)       # load $fp
     addiu $sp, $sp, 32
