@@ -129,14 +129,10 @@ draw_paddle:
     addiu $sp, $sp, -32      # push stack frame
     sw    $ra, 28($sp)       # save $ra
     sw    $s0, 24($sp)       # make space for paddle height
-    sw    $s1, 20($sp)       # make space for for-loop counter
-
     lw    $s0, 56($sp)    # i = paddle height (32 for this frame, + 24 from original)
-
     li    $a0, 39         # x = 39
-    li    $a1, 14         # test value
+    li    $a1, 10         # test value
     li    $a2, 111        # c = 111 = white 
-# for (i = 0; i < paddle height; i++)
     j draw_paddle_for_cond
 draw_paddle_loop:
     addi  $s0, $s0, -1    # i--
