@@ -51,7 +51,7 @@ main:
     li    $s4, 1          # Y coordinate increment
     li    $s5, 1          # X direction
     li    $s6, 1          # Y direction
-    li    $t1, 100        # Initialize counter
+    li    $t1, 5        # Initialize counter
     li    $t2, 1
 
 game_loop:
@@ -60,13 +60,15 @@ game_loop:
     jal   draw_paddle     # at x = y-ball coord + (paddle width / 2) to center paddle on ball
     addi  $s2, $s2, 1
     slt   $t2, $s2, $t1
-    bne   $t2, $zero, game_loop  # increment counter, or erase and re-draw paddle/ball
+    bne   $t2, $zero, game_loop
+    jal   clear_ball
     add   $a2, $zero, $zero # write over paddle in black
     jal   draw_paddle
-    add   $s2, $zero, $zero
-    #jal   set_position
+    jal   set_position
     j     game_loop
 
+# This function draws the ball by first writing the updated X coordinate, then the Y coordinate 
+# and finally the color.
 draw_ball:
     addiu $sp, $sp, -4
     sw    $ra, 0($sp)
@@ -78,37 +80,60 @@ draw_ball:
     addiu $sp, $sp, 4
     jr    $ra
 
+# This function clears the ball by writing the current X coordinate, then the Y coordinate
+# but colors it black
+clear_ball:
+    addiu $sp, $sp, -4
+    sw    $ra, 0($sp)
+    add   $a0, $s0, $zero
+    jal   write_byte
+    add   $a0, $s1, $zero
+    jal   write_byte
+    add  $a0, $zero, $zero
+    jal   write_byte 
+    lw    $ra, 0($sp)
+    addiu $sp, $sp, 4
+    jr    $ra
+
+# This function sets the position of the ball by checking whether the ball is at the edges or
+# is hitting a paddle. If it is, then it changes the direction of the ball respectively. 
+# Otherwise, it increments the X and Y coordinate by 1.
 set_position:
     addiu $sp, $sp, -4
-    sw    $ra, 28($sp)
+    sw    $ra, 0($sp)
     jal   change_x_direction
-test_y:
     jal   change_y_direction
-    bne   $t3, $s0, change_position
-    li    $s6, 1
+
+# This function updates the X and Y position of the ball in the registers after the
+# conditions have been passed and resets the counter
 change_position:
     add   $s0, $s0, $s5
     add   $s1, $s1, $s6
     add   $s2, $zero, $zero
-    lw    $ra, 28($sp)
+    lw    $ra, 0($sp)
+    addi  $sp, $sp, 4
     jr    $ra
 
 change_x_direction:
-    lw    $t0, 0($sp)
+    lw    $t0, 4($sp)
     bne   $t0, $s0, test_x_next
     li    $s5, -1
-test_x_next:
+test_x_next: 
+    addi  $t0, $zero, 1
+    beq   $t0, $s0, hit_paddle
     bne   $s0, $zero, finish_x
     j     end_the_game
+hit_paddle:
+    li    $s5, 1
 finish_x:
     jr   $ra
 
 change_y_direction:
-    lw    $t0, 4($sp)
+    lw    $t0, 8($sp)
     bne   $t0, $s1, test_y_next
     li    $s6, -1
 test_y_next:
-    bne   $s0, $zero, finish_y
+    bne   $s1, $zero, finish_y
     li    $s6, 1
 finish_y:
     jr    $ra
@@ -136,14 +161,14 @@ draw_paddle:
     add   $a0, $zero, $zero  # x = 0 (left edge paddle
     srl   $t0, $s0, 1        # center paddle on ball
     add   $a1, $s1, $t0
-#paddle_upper_bound:
-#    slti  $t0, $a1, 30       # 1 if y-coord not too large
-#    bne   $t0, $zero, paddle_lower_bound
-#    addi  $a1, $zero, 29 
-#paddle_lower_bound:
-#    slt   $t0, $a1, $s0      # 1 if y-coord too small
-#    beq   $t0, $zero, draw_paddle_for_cond
-#    addi  $a1, $s0, -1
+paddle_upper_bound:
+    slti  $t0, $a1, 30       # 1 if y-coord not too large
+    bne   $t0, $zero, paddle_lower_bound
+    addi  $a1, $zero, 29 
+paddle_lower_bound:
+    slt   $t0, $a1, $s0      # 1 if y-coord too small
+    beq   $t0, $zero, draw_paddle_for_cond
+    addi  $a1, $s0, -1
     j draw_paddle_for_cond
 draw_paddle_loop:
     jal   write_square
