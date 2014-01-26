@@ -54,23 +54,21 @@ main:
     li    $t1, 100        # Initialize counter
     li    $t2, 1
 
-setup:
-    addi  $a2, $zero, 111
-    jal   draw_paddle     # at x = y-ball coord + (paddle width / 2) to center paddle on ball
-    add   $a1, $s1, $t1
-    add   $a2, $zero, $zero # write over paddle in black
-#    jal   draw_paddle
-
 game_loop:
     jal   draw_ball
+    addi  $a2, $zero, 111
+    jal   draw_paddle     # at x = y-ball coord + (paddle width / 2) to center paddle on ball
     addi  $s2, $s2, 1
     slt   $t2, $s2, $t1
-    bne   $t2, $zero, game_loop
-    jal   set_position
+    bne   $t2, $zero, game_loop  # increment counter, or erase and re-draw paddle/ball
+    add   $a2, $zero, $zero # write over paddle in black
+    jal   draw_paddle
+    add   $s2, $zero, $zero
+    #jal   set_position
     j     game_loop
 
 draw_ball:
-    addiu $sp, $sp -4
+    addiu $sp, $sp, -4
     sw    $ra, 0($sp)
     add   $a0, $s0, $zero
     add   $a1, $s1, $zero
@@ -115,21 +113,6 @@ test_y_next:
 finish_y:
     jr    $ra
 
-# GAME CODE GOES HERE
-
-# some things you need to do:
-# draw on top of the old ball and paddle to erase them
-# determine the new positions of the ball and paddle
-# draw the ball and paddle again
-
-# pause for some number of instructions so that the game is playable/observable
-# (make a count-down loop from some number, experiment with different numbers)
-
-# this will exit SPIM and stop the display from asking for more output
-# the implementation is below
-
-    # uncomment this to loop through your game code
-
 # send the exit signal to the display and make an exit syscall in SPIM
 # this stops the Python Tk display and SPIM safely
 end_the_game:
@@ -137,11 +120,6 @@ end_the_game:
     jal   write_byte
     li    $v0, 10 # the exit syscall
     syscall
-
-# write useful functions here
-
-# functions can call other functions, but make sure to use consistent
-# calling conventions and to restore return addresses properly
 
 # function: draw_paddle
 # draws a paddle centered at the ball's current y-coordinate.
@@ -156,16 +134,16 @@ draw_paddle:
     sw    $s0, 24($sp)       # make space for paddle height
     lw    $s0, 56($sp)       # i = paddle height (32 for this frame, + 24 from original)
     add   $a0, $zero, $zero  # x = 0 (left edge paddle
-    srl   $t1, $s0, 1        # center paddle on ball
-    add   $a1, $s1, $t1
-paddle_upper_bound:
-    slti  $t0, $a1, 30       # 1 if y-coord not too large
-    bne   $t0, $zero, paddle_lower_bound
-    addi  $a1, $zero, 29 
-paddle_lower_bound:
-    slt   $t0, $a1, $s0      # 1 if y-coord too small
-    beq   $t0, $zero, draw_paddle_for_cond
-    addi  $a1, $s0, -1
+    srl   $t0, $s0, 1        # center paddle on ball
+    add   $a1, $s1, $t0
+#paddle_upper_bound:
+#    slti  $t0, $a1, 30       # 1 if y-coord not too large
+#    bne   $t0, $zero, paddle_lower_bound
+#    addi  $a1, $zero, 29 
+#paddle_lower_bound:
+#    slt   $t0, $a1, $s0      # 1 if y-coord too small
+#    beq   $t0, $zero, draw_paddle_for_cond
+#    addi  $a1, $s0, -1
     j draw_paddle_for_cond
 draw_paddle_loop:
     jal   write_square
