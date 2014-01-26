@@ -55,11 +55,11 @@ main:
     li    $t2, 1
 
 setup:
-    lw    $t0, 24($sp)
-    srl   $t1, $t0, 1
-    add   $a1, $s1, $t1
+    addi  $a2, $zero, 111
     jal   draw_paddle     # at x = y-ball coord + (paddle width / 2) to center paddle on ball
-#    jal   clear_paddle
+    add   $a1, $s1, $t1
+    add   $a2, $zero, $zero # write over paddle in black
+#    jal   draw_paddle
 
 game_loop:
     jal   draw_ball
@@ -73,12 +73,14 @@ game_loop:
 # This function draws the ball by first writing the updated X coordinate, then the Y coordinate 
 # and finally the color.
 draw_ball:
+    addiu $sp, $sp -4
+    sw    $ra, 0($sp)
     add   $a0, $s0, $zero
-    jal   write_byte
-    add   $a0, $s1, $zero
-    jal   write_byte
-    lw    $a0, 16($sp)
-    jal   write_byte 
+    add   $a1, $s1, $zero
+    lw    $a2, 20($sp)
+    jal   write_square 
+    lw    $ra, 0($sp)
+    addiu $sp, $sp, 4
     jr    $ra
 
 # This function clears the ball by writing the current X coordinate, then the Y coordinate
@@ -166,16 +168,18 @@ end_the_game:
 # function: draw_paddle
 # draws a paddle centered at the ball's current y-coordinate.
 # The width of the paddle is determined by a global var
-# Does not error check for bounds
-# $a0 contains x coordinate of paddle
-# $a1 contains initial y coordinate
+# checks paddle bounds to ensure it does not write off-screen
+# $a0 = x coordinate of paddle
+# $a1 = initial y coordinate
+# $a2 = color 
 draw_paddle:
     addiu $sp, $sp, -32      # push stack frame
     sw    $ra, 28($sp)       # save $ra
     sw    $s0, 24($sp)       # make space for paddle height
     lw    $s0, 56($sp)       # i = paddle height (32 for this frame, + 24 from original)
-    add   $a0, $zero, $zero  # x = 0 (left edge paddle)
-    addi  $a2, $zero, 111    # c = 111 = white 
+    add   $a0, $zero, $zero  # x = 0 (left edge paddle
+    srl   $t1, $s0, 1        # center paddle on ball
+    add   $a1, $s1, $t1
 paddle_upper_bound:
     slti  $t0, $a1, 30       # 1 if y-coord not too large
     bne   $t0, $zero, paddle_lower_bound
@@ -196,26 +200,6 @@ draw_paddle_exit:
     lw    $ra, 28($sp)       # load $ra
     lw    $s0, 24($sp)       # make space for paddle height
     addiu $sp, $sp, 32       # pop stack frame
-    jr    $ra
-
-# function: clear_column
-# blacks out a column (usually to erase a paddle)
-clear_paddle:
-    addiu $sp, $sp, -32
-    sw    $ra, 28($sp)
-    add   $a0, $zero, $zero
-    addi  $a1, $zero, 29
-    add   $a2, $zero, $zero
-    j clear_paddle_while_cond
-clear_paddle_loop:
-    jal write_square
-    addi  $a1, $a1, -1
-clear_paddle_while_cond:
-    slt   $t0, $a1, $zero
-    beq   $t0, $zero, clear_paddle_loop
-clear_paddle_exit:
-    lw    $ra, 28($sp)
-    addiu $sp, $sp, 32
     jr    $ra
 
 # function: write_square
