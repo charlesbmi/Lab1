@@ -54,16 +54,17 @@ main:
     li    $t1, 5        # Initialize counter
     li    $t2, 1
 
+    jal   draw_paddle
+
 game_loop:
     jal   draw_ball
     addi  $a2, $zero, 111
-    jal   draw_paddle     # at x = y-ball coord + (paddle width / 2) to center paddle on ball
     addi  $s2, $s2, 1
     slt   $t2, $s2, $t1
     bne   $t2, $zero, game_loop
     jal   clear_ball
     add   $a2, $zero, $zero # write over paddle in black
-    jal   draw_paddle
+    jal   update_paddle
     jal   set_position
     j     game_loop
 
@@ -86,11 +87,9 @@ clear_ball:
     addiu $sp, $sp, -4
     sw    $ra, 0($sp)
     add   $a0, $s0, $zero
-    jal   write_byte
-    add   $a0, $s1, $zero
-    jal   write_byte
-    add  $a0, $zero, $zero
-    jal   write_byte 
+    add   $a1, $s1, $zero
+    add   $a2, $zero, $zero
+    jal   write_square 
     lw    $ra, 0($sp)
     addiu $sp, $sp, 4
     jr    $ra
@@ -126,7 +125,7 @@ test_x_next:
 hit_paddle:
     li    $s5, 1
 finish_x:
-    jr   $ra
+    jr    $ra
 
 change_y_direction:
     lw    $t0, 8($sp)
@@ -158,17 +157,9 @@ draw_paddle:
     sw    $ra, 28($sp)       # save $ra
     sw    $s0, 24($sp)       # make space for paddle height
     lw    $s0, 56($sp)       # i = paddle height (32 for this frame, + 24 from original)
-    add   $a0, $zero, $zero  # x = 0 (left edge paddle
+    add   $a0, $zero, $zero  # x = 0 (left edge paddle)
     srl   $t0, $s0, 1        # center paddle on ball
     add   $a1, $s1, $t0
-paddle_upper_bound:
-    slti  $t0, $a1, 30       # 1 if y-coord not too large
-    bne   $t0, $zero, paddle_lower_bound
-    addi  $a1, $zero, 29 
-paddle_lower_bound:
-    slt   $t0, $a1, $s0      # 1 if y-coord too small
-    beq   $t0, $zero, draw_paddle_for_cond
-    addi  $a1, $s0, -1
     j draw_paddle_for_cond
 draw_paddle_loop:
     jal   write_square
@@ -183,6 +174,46 @@ draw_paddle_exit:
     addiu $sp, $sp, 32       # pop stack frame
     jr    $ra
 
+# function: update_paddle
+update_paddle:
+    addiu $sp, $sp, -32
+    sw    $ra, 28($sp)
+    sw    $s0, 24($sp)       # make space for paddle height
+    lw    $s0, 56($sp)       # i = paddle height (32 for this frame, + 24 from original)
+    add   $a0, $zero, $zero  # x = 0 (left edge paddle)
+    srl   $t0, $s0, 1        # center paddle on ball
+    add   $a1, $s1, $t0
+paddle_upper_bound:
+    slti  $t0, $a1, 30       # 0 if y-coord too large
+    beq   $t0, $zero, update_paddle_exit
+paddle_lower_bound:
+    addi  $t0, $s0, -1
+    slt   $t0, $a1, $t0      # 1 if y-coord too small
+    bne   $t0, $zero, update_paddle_exit
+move_up_or_down:
+    slt   $t0, $s6, $zero
+    bne   $t0, $zero, move_up
+move_down:                       # erase above and below current location
+    addi  $a2, $zero, 111
+    jal   write_square
+    srl   $t0, $s0, 1        # center paddle on ball
+    sub   $a1, $s1, $t0
+    add   $a2, $zero, $zero
+    jal   write_square
+    j     update_paddle_exit
+move_up:
+    addi  $a1, $a1, 1
+    add   $a2, $zero, $zero 
+    jal   write_square
+    sub   $a1, $a1, $s0
+    addi  $a2, $zero, 111
+    jal write_square
+update_paddle_exit:
+    lw    $ra, 28($sp)
+    lw    $s0, 24($sp)       # make space for paddle height
+    addiu $sp, $sp, 32       # pop stack frame
+    jr    $ra
+
 # function: write_square
 # write the bytes in $a0, $a1, $a2 to the transmitter data register
 # in sequence, corresponding in a drawn square at x=$a0,y=$a1,c=$a2
@@ -191,11 +222,16 @@ write_square:
     addiu $sp, $sp, -32      # push stack frame
     sw    $ra, 28($sp)       # save $ra
     sw    $a0, 20($sp)       # save a0 
+    slt   $t0, $a1, $zero
+    bne   $t0, $zero, exit_write
+    slti  $t0, $a1, 30
+    beq   $t0, $zero, exit_write
     jal   write_byte
     add   $a0, $a1, $zero    # store a1 to a0 to write byte
     jal   write_byte
     add   $a0, $a2, $zero    # store a2 to a0 to write byte
     jal   write_byte
+exit_write:
     lw    $a0, 20($sp)       # restore a0
     lw    $ra, 28($sp)       # load $ra
     addiu $sp, $sp, 32
