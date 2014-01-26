@@ -45,7 +45,7 @@ main:
     li    $t0, 6          # paddle height
     sw    $t0, 24($sp)
     li    $s0, 12         # Ball X coordinate
-    li    $s1, 29         # Ball Y coordinate
+    li    $s1, 15         # Ball Y coordinate
     li    $s2, 0          # Counter
     li    $s3, 1          # X coordinate increment
     li    $s4, 1          # Y coordinate increment
@@ -62,12 +62,12 @@ setup:
 #    jal   clear_paddle
 
 game_loop:
-    jal   set_position
     jal   draw_ball
     addi  $s2, $s2, 1
     slt   $t2, $s2, $t1
-    beq   $t2, $zero, game_loop
-    j     draw_ball
+    bne   $t2, $zero, game_loop
+    jal   set_position
+    j     game_loop
 
 draw_ball:
     add   $a0, $s0, $zero
@@ -89,6 +89,7 @@ test_y:
 change_position:
     add   $s0, $s0, $s5
     add   $s1, $s1, $s6
+    add   $s2, $zero, $zero
     lw    $ra, 28($sp)
     jr    $ra
 
@@ -126,7 +127,6 @@ finish_y:
 # the implementation is below
 
     # uncomment this to loop through your game code
-#    j     game_loop
 
 # send the exit signal to the display and make an exit syscall in SPIM
 # this stops the Python Tk display and SPIM safely
