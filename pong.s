@@ -51,7 +51,7 @@ main:
     li    $s4, 1          # Y coordinate increment
     li    $s5, 1          # X direction
     li    $s6, 1          # Y direction
-    li    $t1, 10         # Initialize counter
+    li    $t1, 100        # Initialize counter
     li    $t2, 1
 
 setup:
@@ -73,7 +73,7 @@ game_loop:
 # This function draws the ball by first writing the updated X coordinate, then the Y coordinate 
 # and finally the color.
 draw_ball:
-    addiu $sp, $sp -4
+    addiu $sp, $sp, -4
     sw    $ra, 0($sp)
     add   $a0, $s0, $zero
     add   $a1, $s1, $zero
@@ -86,12 +86,17 @@ draw_ball:
 # This function clears the ball by writing the current X coordinate, then the Y coordinate
 # but colors it black
 clear_ball:
+    addiu $sp, $sp, -4
+    sw    $ra, 0($sp)
     add   $a0, $s0, $zero
     jal   write_byte
     add   $a0, $s1, $zero
     jal   write_byte
     add  $a0, $zero, $zero
     jal   write_byte 
+    lw    $ra, 0($sp)
+    addiu $sp, $sp, 4
+    jr    $ra
 
 # This function sets the position of the ball by checking whether the ball is at the edges or
 # is hitting a paddle. If it is, then it changes the direction of the ball respectively. 
@@ -101,7 +106,6 @@ set_position:
     sw    $ra, 0($sp)
     jal   change_x_direction
     jal   change_y_direction
-    jal   change_position
 
 # This function updates the X and Y position of the ball in the registers after the
 # conditions have been passed and resets the counter
@@ -114,7 +118,7 @@ change_position:
     jr    $ra
 
 change_x_direction:
-    lw    $t0, 0($fp)
+    lw    $t0, 4($sp)
     bne   $t0, $s0, test_x_next
     li    $s5, -1
 test_x_next: 
@@ -128,11 +132,11 @@ finish_x:
     jr   $ra
 
 change_y_direction:
-    lw    $t0, 0($sp)
+    lw    $t0, 8($sp)
     bne   $t0, $s1, test_y_next
     li    $s6, -1
 test_y_next:
-    bne   $s0, $zero, finish_y
+    bne   $s1, $zero, finish_y
     li    $s6, 1
 finish_y:
     jr    $ra
