@@ -51,7 +51,7 @@ main:
     li    $s4, 1          # Y coordinate increment
     li    $s5, 1          # X direction
     li    $s6, 1          # Y direction
-    li    $t1, 5        # Initialize counter
+    li    $t1, 5          # Initialize counter
     li    $t2, 1
 
     jal   draw_paddle
@@ -71,11 +71,11 @@ game_loop:
 # This function draws the ball by first writing the updated X coordinate, then the Y coordinate 
 # and finally the color.
 draw_ball:
-    addiu $sp, $sp, -4
-    sw    $ra, 0($sp)
-    add   $a0, $s0, $zero
-    add   $a1, $s1, $zero
-    lw    $a2, 20($sp)
+    addiu $sp, $sp, -4          # Push the stack frame
+    sw    $ra, 0($sp)           # Save the $ra
+    add   $a0, $s0, $zero       # Move the X coordinate value
+    add   $a1, $s1, $zero       # Move the Y coordinate Value
+    lw    $a2, 20($sp)          # Load the color
     jal   write_square 
     lw    $ra, 0($sp)
     addiu $sp, $sp, 4
@@ -84,8 +84,8 @@ draw_ball:
 # This function clears the ball by writing the current X coordinate, then the Y coordinate
 # but colors it black
 clear_ball:
-    addiu $sp, $sp, -4
-    sw    $ra, 0($sp)
+    addiu $sp, $sp, -4          # Push the stack frame
+    sw    $ra, 0($sp)           # Save the $ra
     add   $a0, $s0, $zero
     add   $a1, $s1, $zero
     add   $a2, $zero, $zero
@@ -106,34 +106,34 @@ set_position:
 # This function updates the X and Y position of the ball in the registers after the
 # conditions have been passed and resets the counter
 change_position:
-    add   $s0, $s0, $s5
-    add   $s1, $s1, $s6
-    add   $s2, $zero, $zero
+    add   $s0, $s0, $s5            # Increment the X and Y coordinates depending
+    add   $s1, $s1, $s6            # on the direction of movement
+    add   $s2, $zero, $zero        # Reset Counter
     lw    $ra, 0($sp)
-    addi  $sp, $sp, 4
+    addiu  $sp, $sp, 4              # Push back stack frame
     jr    $ra
 
 change_x_direction:
     lw    $t0, 4($sp)
     bne   $t0, $s0, test_x_next
-    li    $s5, -1
+    addi  $s5, $zero, -1
 test_x_next: 
     addi  $t0, $zero, 1
     beq   $t0, $s0, hit_paddle
     bne   $s0, $zero, finish_x
     j     end_the_game
 hit_paddle:
-    li    $s5, 1
+    addi  $s5, $zero, 1
 finish_x:
     jr    $ra
 
 change_y_direction:
     lw    $t0, 8($sp)
     bne   $t0, $s1, test_y_next
-    li    $s6, -1
+    addi  $s6, $zero, -1
 test_y_next:
     bne   $s1, $zero, finish_y
-    li    $s6, 1
+    addi  $s6, $zero, 1
 finish_y:
     jr    $ra
 
