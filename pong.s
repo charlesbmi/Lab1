@@ -55,16 +55,16 @@ main:
     li    $t2, 1
 
     jal   draw_paddle
+    jal   draw_ball
 
 game_loop:
     jal   draw_ball
-    addi  $a2, $zero, 111
+    lw   $a2, 12($sp)
     addi  $s2, $s2, 1
     slt   $t2, $s2, $t1
     bne   $t2, $zero, game_loop
-    jal   clear_ball
-    add   $a2, $zero, $zero # write over paddle in black
     jal   update_paddle
+    jal   clear_ball
     jal   set_position
     j     game_loop
 
@@ -194,7 +194,7 @@ move_up_or_down:
     slt   $t0, $s6, $zero
     bne   $t0, $zero, move_up
 move_down:                       # erase above and below current location
-    addi  $a2, $zero, 111
+    addi  $a2, $zero, 0x02
     jal   write_square
     srl   $t0, $s0, 1        # center paddle on ball
     sub   $a1, $s1, $t0
@@ -206,7 +206,7 @@ move_up:
     add   $a2, $zero, $zero 
     jal   write_square
     sub   $a1, $a1, $s0
-    addi  $a2, $zero, 111
+    addi  $a2, $zero, 0x02
     jal write_square
 update_paddle_exit:
     lw    $ra, 28($sp)
